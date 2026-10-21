@@ -79,7 +79,7 @@ with c4:
         tooltip=["참여형태", "참여방법", "건수"]).properties(height=280), width="stretch")
 
 # ── 연구소 × 발주기관 히트맵 ──
-ui.section(f"{cur}년 연구소 × 발주기관 (당해년도 연구비, 억원)")
+ui.section(f"{cur % 100}년 발주기관 대상 연구비")
 x = d_cur.groupby(["연구소", "기관"], as_index=False).agg(금액=("당해(억)", "sum"), 건수=("과제명", "count"))
 ag_order = list(ag["기관"])
 h2 = alt.Chart(x).encode(y=alt.Y("연구소:N", sort=order, title=None, axis=alt.Axis(labelLimit=170)), x=alt.X("기관:N", sort=ag_order, title=None, axis=alt.Axis(labelAngle=-30)))
