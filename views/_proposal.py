@@ -34,7 +34,7 @@ def render(section: str | None = None) -> None:
         gov = c1.number_input("정부지원 연구개발비(천원)", value=250_000, step=10_000)
         gov_max = c2.number_input("정부지원 상한 (공기업)", value=float(A["gov_ratio_max_public"]), step=0.05, format="%.2f")
         cash_min = c3.number_input("기관부담 중 현금 하한", value=float(A["cash_ratio_min_public"]), step=0.01, format="%.2f")
-        rate = c4.number_input("간접비 고시비율 (미해당, 참고)", value=0.20, step=0.01, format="%.2f",
+        rate = c4.number_input("간접비 비율 (참고)", value=0.20, step=0.01, format="%.2f",
                                help="공기업 수탁과제에는 미해당이며 참고용 값임")
         tbl = st.data_editor(budget.default_table(), hide_index=True, width="stretch", disabled=["비목"],
                              column_config={"현금(천원)": st.column_config.NumberColumn(format="localized"),

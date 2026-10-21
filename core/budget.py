@@ -79,7 +79,7 @@ def evaluate(tbl: pd.DataFrame, gov: int, gov_max: float, cash_min: float, indir
     inno_lim = min(0.1 * base, 50_000)
     C.append(BudgetCheck(inno <= inno_lim + 1e-9, "연구혁신비", f"{inno:,.0f}", f"≤ min(재료+활동 10%, 5천만원) = {inno_lim:,.0f}", "K02"))
     ind = cash.get("간접비", 0)
-    C.append(BudgetCheck(ind <= mod_direct * indirect_rate + 1e-9, "간접비 (미해당, 참고)", f"{ind:,.0f}",
+    C.append(BudgetCheck(ind <= mod_direct * indirect_rate + 1e-9, "간접비 (참고)", f"{ind:,.0f}",
                          f"≤ 수정직접비 × {indirect_rate:.1%} ({mod_direct*indirect_rate:,.0f})", "K09",
                          "공기업 수탁과제에는 고시비율 미해당이며 참고용 값임"))
     bad = [r for r in ink.index if ink.get(r, 0) > 0 and r.strip("└ ").strip() not in INKIND_ALLOWED]
