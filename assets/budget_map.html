@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>비목 매핑 지도</title>
+<style>
+  :root {
+    --navy: #0B3B6E; --blue: #005BAC; --teal: #00A0B0;
+    --text: #16202C; --sub: #4E5968; --muted: #8B95A1; --line: #DDE3EA; --bg: #FFFFFF; --bg2: #F4F6F9;
+    --ok: #2E8B57; --cond: #2F6FD6; --no: #D0453B; --chk: #8B95A1;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif; font-size: 13.5px; line-height: 1.5; }
+  /* 미리보기 전용 머리글 (앱에서는 빠짐) */
+  .pv-top { background: var(--navy); color: #fff; padding: 14px 20px; border-radius: 4px; margin: 12px 16px 10px; }
+  .pv-top .sub { font-size: .8rem; opacity: .8; } .pv-top .brand { font-weight: 800; font-size: 1.35rem; }
+  .pv-head { margin: 0 16px 8px; } .pv-crumb { color: #6B7684; font-size: .8rem; }
+  .pv-title { font-size: 1.3rem; font-weight: 700; } .pv-desc { color: var(--sub); font-size: .9rem; }
+  .wrap { padding: 0 16px 16px; }
+  /* 요약 카드 */
+  .cards { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 10px; }
+  .card { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: #fff; cursor: pointer; }
+  .card .l { color: #6B7684; font-size: .74rem; } .card .v { font-size: 1.25rem; font-weight: 700; }
+  .card.on { outline: 2px solid var(--blue); }
+  /* 탭 */
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 10px; }
+  .tabs button { border: 0; background: none; padding: 8px 14px; font: inherit; font-size: .92rem; color: var(--sub);
+                 cursor: pointer; border-bottom: 2px solid transparent; }
+  .tabs button.on { color: var(--blue); border-bottom-color: var(--blue); font-weight: 700; }
+  .pane { display: none; } .pane.on { display: block; }
+  /* 도구 막대 */
+  .tool { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  .tool input[type=text] { flex: 1; min-width: 200px; border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; font: inherit; }
+  .tool button { border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 6px 10px; font: inherit; font-size: .82rem; cursor: pointer; }
+  .legend { display: flex; gap: 12px; align-items: center; color: var(--sub); font-size: .78rem; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 26px; height: 0; border-top: 2.5px solid; vertical-align: middle; margin-right: 4px; }
+  /* 배지 */
+  .bdg { display: inline-block; padding: 0 7px; border-radius: 9px; font-size: .72rem; font-weight: 600; white-space: nowrap; }
+  .t-일치 { color: #1E6B3A; background: #E6F4EA; } .t-조건부일치 { color: #1A56A8; background: #E8F0FB; }
+  .t-분리매칭 { color: #5B3FA0; background: #EFEAFB; } .t-일부불가 { color: #9A5B00; background: #FFF4E0; }
+  .t-매칭불가 { color: #B42318; background: #FDECEA; } .t-내역확인 { color: #4E5968; background: #F2F4F6; }
+  .j-가능 { color: #1E6B3A; background: #E6F4EA; } .j-조건부가능 { color: #1A56A8; background: #E8F0FB; }
+  .j-불가 { color: #B42318; background: #FDECEA; } .j-확인필요 { color: #4E5968; background: #F2F4F6; }
+  .sys { display: inline-block; font-size: .68rem; color: #6B7684; border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; margin-right: 4px; }
+  /* 지도 + 상세 */
+  .main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 10px; }
+  .map { position: relative; height: 640px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--bg2); }
+  .cols { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 120px minmax(0, 1fr); padding: 10px; min-height: 100%; }
+  svg.links { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+  .colhead { font-weight: 700; color: var(--navy); font-size: .86rem; margin: 0 0 6px; }
+  .grp { margin: 8px 0 4px; font-size: .78rem; font-weight: 700; color: var(--sub); }
+  .kw { position: relative; display: flex; align-items: center; gap: 6px; justify-content: space-between; background: #fff;
+        border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; margin-bottom: 4px; cursor: pointer; }
+  .kw .nm { flex: 1; min-width: 0; } .kw:hover { border-color: var(--blue); }
+  .sel { border-color: var(--blue) !important; box-shadow: 0 0 0 2px rgba(0,91,172,.18); }
+  .dim { opacity: .35; } .hide { display: none !important; }
+  .kg { display: flex; align-items: center; justify-content: space-between; gap: 6px; background: #fff; border: 1px solid var(--line);
+        border-left: 4px solid var(--navy); border-radius: 6px; padding: 6px 8px; margin: 0 0 5px; cursor: pointer; font-weight: 700; }
+  .kg:hover { border-color: var(--blue); } .kg .arr { color: var(--muted); font-size: .8rem; margin-right: 2px; }
+  .kg .mix { display: flex; gap: 3px; flex-wrap: wrap; justify-content: flex-end; font-weight: 400; }
+  .kg .mix .bdg { font-size: .68rem; padding: 0 6px; min-width: 18px; text-align: center; }
+  .kg > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kgi { margin: 0 0 5px 14px; }
+  .ob { color: var(--muted); font-size: .74rem; margin-right: 3px; }
+  .chip { border: 1px solid var(--line); background: #fff; border-radius: 14px; padding: 4px 10px; font-size: .8rem; cursor: pointer; }
+  .chip.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .gk { margin: 10px 0 4px; font-size: .8rem; font-weight: 800; color: #fff; background: var(--navy); border-radius: 4px; padding: 2px 8px; display: inline-block; }
+  .bm { display: flex; align-items: center; justify-content: space-between; gap: 6px; background: #fff; border: 1px solid var(--line);
+        border-left: 4px solid var(--blue); border-radius: 6px; padding: 5px 8px; margin: 4px 0 2px; cursor: pointer; font-weight: 700; }
+  .bm .cnt { color: var(--muted); font-weight: 400; font-size: .74rem; }
+  .bm .arr { color: var(--muted); font-size: .8rem; margin-right: 2px; }
+  .bm.indirect { border-left-color: var(--teal); }
+  .sm { display: flex; align-items: center; justify-content: space-between; gap: 6px; background: #fff; border: 1px solid var(--line);
+        border-radius: 6px; padding: 4px 8px; margin: 0 0 3px 14px; cursor: pointer; font-size: .82rem; }
+  .sm:hover, .bm:hover { border-color: var(--blue); }
+  .ap { font-weight: 700; font-size: .78rem; width: 14px; text-align: center; }
+  .ap-○ { color: var(--ok); } .ap-△ { color: #C77700; } .ap-× { color: var(--muted); }
+  .inc { color: var(--muted); font-size: .72rem; }
+  /* 상세 패널 */
+  .detail { height: 640px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; background: #fff; }
+  .detail h3 { margin: 2px 0 6px; font-size: 1.02rem; color: var(--navy); }
+  .detail .kv { color: var(--sub); font-size: .8rem; margin: 8px 0 2px; font-weight: 700; }
+  .detail p { margin: 2px 0 6px; }
+  .rule { border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; margin: 6px 0; }
+  .rule .c { font-weight: 600; } .rule .t { color: var(--blue); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .rule .r { color: var(--sub); font-size: .8rem; margin-top: 3px; } .rule .b { color: var(--muted); font-size: .74rem; margin-top: 2px; }
+  .rule.no { border-left: 4px solid var(--no); } .rule.cond { border-left: 4px solid var(--cond); }
+  .rule.ok { border-left: 4px solid var(--ok); } .rule.chk { border-left: 4px solid var(--chk); }
+  .warnbox { background: #FFF8EC; border: 1px solid #F3D9A8; border-radius: 4px; padding: 7px 9px; color: #5A4100; font-size: .8rem; margin: 6px 0; }
+  .notebox { background: #F4F8FD; border: 1px solid #D6E4F5; border-radius: 4px; padding: 7px 9px; color: #2B3A4D; font-size: .8rem; margin: 6px 0; }
+  .link { color: var(--blue); cursor: pointer; }
+  /* 표 */
+  table { border-collapse: collapse; width: 100%; font-size: .8rem; }
+  th, td { border: 1px solid var(--line); padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: var(--bg2); position: sticky; top: 0; }
+  .tblwrap { max-height: 640px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; }
+  @media (max-width: 1100px) {
+    .main { grid-template-columns: minmax(0, 1fr) 300px; } .cols { grid-template-columns: minmax(0, 1fr) 64px minmax(0, 1fr); }
+  }
+  @media (max-width: 820px) {
+    .cards { grid-template-columns: repeat(3, 1fr); }
+    .main { grid-template-columns: 1fr; }
+    .map { height: auto; max-height: none; } .cols { grid-template-columns: 1fr; } .cols .gap, svg.links { display: none; }
+    .detail { height: auto; }
+  }
+</style>
+</head>
+<body>
+<!--PREVIEW_HEADER-->
+<div class="wrap">
+  <div class="cards" id="cards"></div>
+  <div class="tabs">
+    <button class="on" data-p="p-map">매핑 지도</button>
+    <button data-p="p-table">표로 보기</button>
+    <button data-p="p-cmp">K-water 특수 규정 비교</button>
+  </div>
+
+  <div class="pane on" id="p-map">
+    <div class="tool">
+      <input type="text" id="q" placeholder="검색: 과목·세목·품목 (예: 노트북, 회의비, 클라우드, 투고료)">
+      <span class="chip on" data-s="">전체</span><span class="chip" data-s="경상">경상개발비</span><span class="chip" data-s="조사">조사설계비</span>
+      <button id="expand">모두 펼치기</button>
+      <button id="reset">선택 해제</button>
+    </div>
+    <div class="tool legend">
+      <span><i style="border-color:var(--ok)"></i>가능</span>
+      <span><i style="border-color:var(--cond)"></i>조건부 가능</span>
+      <span><i style="border-color:var(--no);border-top-style:dashed"></i>불가</span>
+      <span>국가R&amp;D 세목 기호: <b class="ap-○">○</b> 공기업 적용 · <b class="ap-△">△</b> 조건부 · <b class="ap-×">×</b> 해당 없음</span>
+    </div>
+    <div class="main">
+      <div class="map" id="map">
+        <div class="cols" id="cols">
+          <svg class="links" id="svg"></svg>
+          <div id="left"><div class="colhead">K-water 예산과목 (경상개발비·조사설계비)</div></div>
+          <div class="gap"></div>
+          <div id="right"><div class="colhead">국가R&amp;D 비목 › 세목 (사용 기준)</div></div>
+        </div>
+      </div>
+      <div class="detail" id="detail"></div>
+    </div>
+  </div>
+
+  <div class="pane" id="p-table">
+    <div class="tool"><input type="text" id="tq" placeholder="표 검색"></div>
+    <div class="tblwrap"><table id="tbl"></table></div>
+  </div>
+
+  <div class="pane" id="p-cmp">
+    <div class="tblwrap"><table id="cmp"></table></div>
+  </div>
+</div>
+
+<script>
+const DATA = /*DATA_JSON*/;
+const MAP_ONLY = /*MAP_ONLY*/false;   // true: 앱 안에서 지도만 표시(표·규정 비교는 Streamlit 탭으로)
+if (MAP_ONLY) { document.querySelector(".tabs").style.display = "none"; }
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const cls = s => s.replace(/\s/g, "");
+const JC = {"가능": "ok", "조건부 가능": "cond", "불가": "no", "확인 필요": "chk"};
+const NAT = Object.fromEntries(DATA.national.map(n => [n.key, n]));
+const BIMOKS = [...new Set(DATA.national.map(n => n.group + "|" + n.bimok))].map(s => { const [g, b] = s.split("|"); return {group: g, bimok: b}; });
+// 실무 표현 → 데이터에 쓰인 표현 (검색용 동의어)
+const ALIAS = {"노트북": ["사무용 기기", "연구기자재"], "컴퓨터": ["사무용 기기", "연구기자재"], "PC": ["사무용 기기"], "모니터": ["사무용 기기"],
+  "프린터": ["사무용 기기"], "마우스": ["사무용 기기"], "키보드": ["사무용 기기"], "의자": ["사무용 기기", "냉난방·청결"],
+  "서버": ["연구시설·장비", "클라우드"], "GPU": ["클라우드", "연구시설·장비"], "AWS": ["클라우드"], "챗GPT": ["LLM"], "AI": ["LLM"],
+  "식대": ["회의비", "식비", "야근"], "점심": ["회의비", "식비"], "도시락": ["회의비"], "출장": ["여비", "출장비"], "교통비": ["여비", "출장비"],
+  "택배": ["택배"], "우편": ["택배"], "논문": ["투고료", "논문 게재료"], "특허": ["지식재산"], "용역": ["위탁", "용역"],
+  "시약": ["재료", "시험물품"], "토너": ["전산소모품", "사무용품"], "강사료": ["세미나개최비", "전문가 활용비"], "설문": ["분석비"]};
+const open = new Set();         // 펼친 국가R&D 비목
+const openK = new Set();        // 펼친 K-water 묶음
+let sysFilter = "";             // "" | "경상" | "조사" (공통 과목은 항상 포함)
+let sel = null;                 // {kind:'kw'|'nat'|'bm', id}
+let typeFilter = null;
+
+// ── 요약 카드 (유형 필터 겸용) ──
+function cards() {
+  const cnt = t => DATA.kwater.filter(k => k.type === t).length;
+  // 판정 우선순위의 역순(일치 → … → 매칭 불가)으로 보여 준다
+  const items = [["K-water 과목", DATA.kwater.length, null]].concat([...DATA.types].reverse().map(t => [t.name, cnt(t.name), t.name]));
+  $("#cards").innerHTML = items.map(([l, v, t]) =>
+    `<div class="card ${typeFilter === t ? "on" : ""}" data-t="${t ?? ""}" title="${t ? esc(DATA.types.find(x => x.name === t).desc) : "전체 보기"}">
+       <div class="l">${t ? `<span class="bdg t-${cls(t)}">${esc(l)}</span>` : esc(l)}</div><div class="v">${v}</div></div>`).join("");
+  document.querySelectorAll(".card").forEach(c => c.onclick = () => { typeFilter = c.dataset.t || null; cards(); render(); });
+}
+
+// ── 지도 그리기 ──
+function render() {
+  const q = $("#q").value.trim().replace(/\s/g, "");
+  const qs = q ? [q, ...Object.entries(ALIAS).filter(([k]) => k.toLowerCase() === q.toLowerCase()).flatMap(([, v]) => v.map(x => x.replace(/\s/g, "")))] : [];
+  const hit = s => !q || qs.some(x => String(s).replace(/\s/g, "").toLowerCase().includes(x.toLowerCase()));
+  // 왼쪽: K-water — 성격별 묶음(접기·펼치기)
+  const kvis = k => (!typeFilter || k.type === typeFilter) && (!sysFilter || k.system === sysFilter || k.system === "공통") &&
+                    (hit(k.bimok + k.sub + k.definition + k.group) || k.rules.some(r => hit(r.cond) || r.keys.some(hit)));
+  let html = '<div class="colhead">K-water 예산과목 (경상개발비·조사설계비)</div>';
+  for (const g of DATA.groups) {
+    const items = DATA.kwater.filter(k => k.group === g && kvis(k));
+    if (!items.length) continue;
+    if (q) openK.add(g);                       // 검색 중에는 맞는 묶음을 자동으로 펼침
+    const isOpen = openK.has(g);
+    const mix = Object.entries(items.reduce((m, k) => (m[k.type] = (m[k.type] || 0) + 1, m), {}))
+      .map(([t, n]) => `<span class="bdg t-${cls(t)}" title="${esc(t)} ${n}개">${n}</span>`).join("");
+    html += `<div class="kg ${sel?.kind === "kg" && sel.id === g ? "sel" : ""}" id="${esc("G_" + g)}" data-g="${esc(g)}">
+      <span><span class="arr">${isOpen ? "▾" : "▸"}</span>${esc(g)} <span class="cnt" style="color:var(--muted);font-weight:400;font-size:.74rem">${items.length}</span></span>
+      <span class="mix">${mix}</span></div>`;
+    for (const k of items) {
+      const ob = k.bimok !== g ? `<span class="ob">${esc(k.bimok)} ›</span>` : "";
+      html += `<div class="kw kgi ${isOpen ? "" : "hide"} ${sel?.kind === "kw" && sel.id === k.id ? "sel" : ""}" id="${k.id}" data-g="${esc(g)}">
+        <span class="nm"><span class="sys">${esc(k.system)}</span>${ob}${esc(k.sub)}</span><span class="bdg t-${cls(k.type)}">${esc(k.type)}</span></div>`;
+    }
+  }
+  if (!html.includes('class="kg')) html += `<div class="notebox">조건에 맞는 과목이 없습니다. 다른 표현으로 검색하거나 '선택 해제'를 눌러 주세요.</div>`;
+  $("#left").innerHTML = html;
+  // 오른쪽: 국가R&D
+  const inc = key => DATA.kwater.filter(k => k.rules.some(r => r.keys.includes(key) && r.judge !== "불가")).length;
+  html = '<div class="colhead">국가R&D 비목 › 세목 (사용 기준)</div>'; let lastG = null;
+  for (const b of BIMOKS) {
+    if (b.group !== lastG) { html += `<div class="gk">${esc(b.group)}</div>`; lastG = b.group; }
+    const sems = DATA.national.filter(n => n.bimok === b.bimok);
+    const isOpen = open.has(b.bimok);
+    const bid = "B_" + b.bimok;
+    html += `<div class="bm ${b.group === "간접비" ? "indirect" : ""} ${sel?.kind === "bm" && sel.id === b.bimok ? "sel" : ""}" id="${esc(bid)}" data-b="${esc(b.bimok)}">
+      <span><span class="arr">${isOpen ? "▾" : "▸"}</span>${esc(b.bimok)}</span><span class="cnt">세목 ${sems.length}</span></div>`;
+    for (const n of sems) {
+      const vis = isOpen && (hit(n.semok + n.desc + n.caution));
+      const c = inc(n.key);
+      html += `<div class="sm ${vis ? "" : "hide"} ${sel?.kind === "nat" && sel.id === n.key ? "sel" : ""}" id="${esc("N_" + n.key)}" data-k="${esc(n.key)}">
+        <span><span class="ap ap-${n.apply}">${n.apply}</span> ${esc(n.semok)}</span><span class="inc">${c ? "←" + c : ""}</span></div>`;
+    }
+  }
+  $("#right").innerHTML = html;
+  bind();
+  requestAnimationFrame(draw);
+}
+
+function bind() {
+  document.querySelectorAll(".kw").forEach(e => e.onclick = () => select("kw", e.id));
+  document.querySelectorAll(".kg").forEach(e => e.onclick = () => {
+    const g = e.dataset.g; openK.has(g) ? openK.delete(g) : openK.add(g); sel = {kind: "kg", id: g}; render(); showDetail();
+  });
+  document.querySelectorAll(".bm").forEach(e => e.onclick = () => {
+    const b = e.dataset.b; open.has(b) ? open.delete(b) : open.add(b); sel = {kind: "bm", id: b}; render(); showDetail();
+  });
+  document.querySelectorAll(".sm").forEach(e => e.onclick = ev => { ev.stopPropagation(); select("nat", e.dataset.k); });
+}
+
+function select(kind, id) {
+  sel = {kind, id};
+  if (kind === "kw") {   // 연결된 세목의 비목을 펼침
+    const k = DATA.kwater.find(x => x.id === id);
+    openK.add(k.group);
+    k.rules.forEach(r => r.keys.forEach(key => open.add(NAT[key].bimok)));
+  } else if (kind === "nat") open.add(NAT[id].bimok);
+  render(); showDetail();
+  const el = kind === "kw" ? document.getElementById(id) : document.getElementById("N_" + id);
+  el?.scrollIntoView({block: "nearest"});
+}
+
+// ── 연결선 ──
+function anchor(key) {
+  const sm = document.getElementById("N_" + key);
+  if (sm && !sm.classList.contains("hide")) return sm;
+  return document.getElementById("B_" + NAT[key].bimok);
+}
+function draw() {
+  const cols = $("#cols"), svg = $("#svg");
+  if (getComputedStyle(svg).display === "none") return;
+  svg.setAttribute("width", cols.scrollWidth); svg.setAttribute("height", cols.scrollHeight);
+  const base = cols.getBoundingClientRect();
+  const lines = [], seen = new Set();
+  for (const k of DATA.kwater) {
+    let ke = document.getElementById(k.id);
+    if (!ke) continue;                                   // 필터로 빠진 과목
+    if (ke.classList.contains("hide")) ke = document.getElementById("G_" + k.group);   // 접힌 묶음
+    if (!ke) continue;
+    for (const r of k.rules) for (const key of r.keys) {
+      const te = anchor(key); if (!te) continue;
+      const sig = ke.id + te.id + r.judge; if (seen.has(sig)) continue; seen.add(sig);
+      const a = ke.getBoundingClientRect(), b = te.getBoundingClientRect();
+      const x1 = a.right - base.left, y1 = a.top + a.height / 2 - base.top, x2 = b.left - base.left, y2 = b.top + b.height / 2 - base.top;
+      let related = !sel;
+      if (sel?.kind === "kw") related = sel.id === k.id;
+      if (sel?.kind === "nat") related = key === sel.id;
+      if (sel?.kind === "bm") related = NAT[key].bimok === sel.id;
+      if (sel?.kind === "kg") related = k.group === sel.id;
+      const color = {"가능": "var(--ok)", "조건부 가능": "var(--cond)", "불가": "var(--no)"}[r.judge] || "var(--chk)";
+      const mx = (x1 + x2) / 2;
+      lines.push(`<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="${color}"
+        stroke-width="${related && sel ? 2.6 : 1.4}" stroke-opacity="${related ? (sel ? .95 : .55) : .08}"
+        ${r.judge === "불가" ? 'stroke-dasharray="5 4"' : ""}/>`);
+    }
+  }
+  svg.innerHTML = lines.join("");
+  // 선택과 관계없는 항목 흐리게
+  document.querySelectorAll(".kw").forEach(e => {
+    let rel = true;
+    if (sel?.kind === "nat") rel = DATA.kwater.find(k => k.id === e.id).rules.some(r => r.keys.includes(sel.id));
+    if (sel?.kind === "bm") rel = DATA.kwater.find(k => k.id === e.id).rules.some(r => r.keys.some(x => NAT[x].bimok === sel.id));
+    e.classList.toggle("dim", !rel);
+  });
+  document.querySelectorAll(".kg").forEach(e => {   // 묶음 머리줄도 관련 여부로 흐리게
+    const ks = DATA.kwater.filter(k => k.group === e.dataset.g);
+    let rel = true;
+    if (sel?.kind === "nat") rel = ks.some(k => k.rules.some(r => r.keys.includes(sel.id)));
+    if (sel?.kind === "bm") rel = ks.some(k => k.rules.some(r => r.keys.some(x => NAT[x].bimok === sel.id)));
+    e.classList.toggle("dim", !rel);
+  });
+}
+
+// ── 상세 패널 ──
+const badgeJ = j => `<span class="bdg j-${cls(j)}">${esc(j)}</span>`;
+const natLink = key => `<span class="link" data-nat="${esc(key)}">${esc(key)}</span>`;
+function showDetail() {
+  const d = $("#detail");
+  if (!sel) {
+    d.innerHTML = `<h3>사용 방법</h3>
+      <p>왼쪽 <b>K-water 묶음</b>을 누르면 과목이 펼쳐지고, 과목이나 오른쪽 <b>국가R&amp;D 비목·세목</b>을 누르면 연결된 선과 세부 조건이 여기에 나옵니다.
+         접힌 묶음에서도 선은 묶음 단위로 이어집니다.</p>
+      <div class="kv">매칭 유형</div>${DATA.types.map(t => `<p><span class="bdg t-${cls(t.name)}">${esc(t.name)}</span> ${esc(t.desc)}</p>`).join("")}
+      <div class="kv">공통 전제</div><div class="notebox">${esc(DATA.meta.premise)}</div>
+      <div class="kv">기준</div><p>${esc(DATA.meta.basis)}</p><p style="color:var(--muted);font-size:.76rem">${esc(DATA.meta.kwater_source)}<br>${esc(DATA.meta.status)} · ${esc(DATA.meta.generated)}</p>`;
+    return;
+  }
+  if (sel.kind === "kw") {
+    const k = DATA.kwater.find(x => x.id === sel.id);
+    const t = DATA.types.find(x => x.name === k.type);
+    d.innerHTML = `<div style="color:var(--muted);font-size:.78rem">K-water ${esc(k.system === "공통" ? "경상개발비·조사설계비" : k.system === "경상" ? "경상개발비" : "조사설계비")} › ${esc(k.bimok)}</div>
+      <h3>${esc(k.sub)}</h3><p><span class="bdg t-${cls(k.type)}">${esc(k.type)}</span> <span style="color:var(--sub);font-size:.8rem">${esc(t.desc)}</span></p>
+      ${k.definition ? `<div class="kv">K-water 기준(가이드라인)</div><p>${esc(k.definition)}</p>` : ""}
+      <div class="kv">국가R&amp;D 매칭 (조건·용도별)</div>
+      ${k.rules.map(r => `<div class="rule ${JC[r.judge]}"><div class="c">${badgeJ(r.judge)} ${esc(r.cond)}</div>
+        <div>→ ${r.keys.length ? r.keys.map(natLink).join(" + ") : "<span style='color:var(--muted)'>(대응 세목 없음)</span>"}</div>
+        ${r.req ? `<div class="r">${r.judge === "불가" ? "불가 사유: " : "조건·유의: "}${esc(r.req)}</div>` : ""}
+        ${r.basis ? `<div class="b">근거: ${esc(r.basis)}</div>` : ""}</div>`).join("")}
+      ${k.note ? `<div class="warnbox">⚠ ${esc(k.note)}</div>` : ""}`;
+  } else if (sel.kind === "nat") {
+    const n = NAT[sel.id];
+    const from = DATA.kwater.flatMap(k => k.rules.filter(r => r.keys.includes(n.key)).map(r => ({k, r})));
+    d.innerHTML = `<div style="color:var(--muted);font-size:.78rem">국가R&amp;D ${esc(n.group)} › ${esc(n.bimok)}</div>
+      <h3>${esc(n.semok)}</h3>
+      <p><span class="ap ap-${n.apply}">${n.apply}</span> 공기업(K-water) ${n.apply === "○" ? "적용" : n.apply === "△" ? "조건부 적용" : "해당 없음"}
+         ${n.inkind === "O" ? ' · <span class="bdg j-가능">현물 가능</span>' : ""}</p>
+      <div class="kv">사용용도</div><p>${esc(n.desc)}</p>
+      <div class="kv">근거 · RCMS</div><p>사용 기준 ${esc(n.basis)} · RCMS ${esc(n.rcms_item)} / ${esc(n.rcms_sub)}</p>
+      ${n.caution ? `<div class="kv">K-water(공기업) 유의사항</div><div class="warnbox">${esc(n.caution)}</div>` : ""}
+      ${n.evidence && n.evidence !== "-" ? `<div class="kv">주요 증빙</div><p>${esc(n.evidence)}</p>` : ""}
+      <div class="kv">연결된 K-water 과목</div>
+      ${from.length ? from.map(({k, r}) => `<div class="rule ${JC[r.judge]}"><div class="c">${badgeJ(r.judge)} <span class="link" data-kw="${k.id}">${esc(k.bimok)} › ${esc(k.sub)}</span></div>
+        <div class="r">${esc(r.cond)}${r.req ? " — " + esc(r.req) : ""}</div></div>`).join("")
+        : `<div class="notebox">K-water 사내 과목에 대응이 없습니다. 수탁과제 예산은 이 세목으로 편성하고, 사내 회계 계정은 연구관리처가 정합니다.</div>`}`;
+  } else if (sel.kind === "kg") {
+    const ks = DATA.kwater.filter(k => k.group === sel.id);
+    d.innerHTML = `<div style="color:var(--muted);font-size:.78rem">K-water 예산과목 묶음</div><h3>${esc(sel.id)}</h3>
+      <div class="kv">과목 ${ks.length}개 — 누르면 세부 조건이 나옵니다</div>
+      ${ks.map(k => `<div class="rule"><div class="c"><span class="bdg t-${cls(k.type)}">${esc(k.type)}</span>
+          <span class="link" data-kw="${k.id}"><span class="sys">${esc(k.system)}</span>${esc(k.bimok)} › ${esc(k.sub)}</span></div>
+        <div class="r">→ ${[...new Set(k.rules.flatMap(r => r.keys.map(x => NAT[x].semok + (r.judge === "불가" ? " (불가)" : r.judge === "조건부 가능" ? " (조건부)" : ""))))].join(", ") || "대응 세목 없음"}</div></div>`).join("")}`;
+  } else if (sel.kind === "bm") {
+    const sems = DATA.national.filter(n => n.bimok === sel.id);
+    d.innerHTML = `<div style="color:var(--muted);font-size:.78rem">국가R&amp;D ${esc(sems[0].group)}</div><h3>${esc(sel.id)}</h3>
+      <div class="kv">세목 ${sems.length}개</div>
+      ${sems.map(n => { const c = DATA.kwater.filter(k => k.rules.some(r => r.keys.includes(n.key) && r.judge !== "불가")).length;
+        return `<p><span class="ap ap-${n.apply}">${n.apply}</span> ${natLink(n.key)} <span class="inc">${c ? "K-water " + c + "개 연결" : "K-water 대응 없음"}</span></p>`; }).join("")}`;
+  }
+  d.querySelectorAll("[data-nat]").forEach(e => e.onclick = () => select("nat", e.dataset.nat));
+  d.querySelectorAll("[data-kw]").forEach(e => e.onclick = () => select("kw", e.dataset.kw));
+}
+
+// ── 표로 보기 ──
+function table() {
+  const q = $("#tq").value.trim().replace(/\s/g, "");
+  const rows = DATA.kwater.flatMap(k => k.rules.map(r => ({k, r})))
+    .filter(({k, r}) => !q || (k.bimok + k.sub + r.cond + r.keys.join("") + r.req).replace(/\s/g, "").includes(q));
+  $("#tbl").innerHTML = `<tr><th>체계</th><th>K-water 과목</th><th>세부</th><th>유형</th><th>조건·용도</th><th>국가R&amp;D 세목</th><th>판정</th><th>조건·불가 사유</th><th>근거</th></tr>` +
+    rows.map(({k, r}) => `<tr><td>${esc(k.system)}</td><td>${esc(k.bimok)}</td><td>${esc(k.sub)}</td>
+      <td><span class="bdg t-${cls(k.type)}">${esc(k.type)}</span></td><td>${esc(r.cond)}</td><td>${esc(r.keys.join(" + ") || "-")}</td>
+      <td>${badgeJ(r.judge)}</td><td>${esc(r.req)}</td><td>${esc(r.basis)}</td></tr>`).join("");
+}
+function compare() {
+  $("#cmp").innerHTML = `<tr><th>항목</th><th>K-water 기준(가이드라인)</th><th>국가R&amp;D 기준</th><th>시사점</th></tr>` +
+    DATA.compare.map(c => `<tr><td><b>${esc(c.item)}</b></td><td>${esc(c.kwater)}</td><td>${esc(c.national)}</td><td>${esc(c.implication)}</td></tr>`).join("");
+}
+
+// ── 이벤트 ──
+document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll(".pane").forEach(p => p.classList.toggle("on", p.id === b.dataset.p));
+  if (b.dataset.p === "p-map") requestAnimationFrame(draw);
+});
+$("#q").oninput = render;
+$("#tq").oninput = table;
+$("#expand").onclick = () => {
+  const all = open.size === BIMOKS.length && openK.size === DATA.groups.length;
+  BIMOKS.forEach(b => all ? open.delete(b.bimok) : open.add(b.bimok));
+  DATA.groups.forEach(g => all ? openK.delete(g) : openK.add(g));
+  $("#expand").textContent = all ? "모두 펼치기" : "모두 접기"; render();
+};
+document.querySelectorAll(".chip").forEach(c => c.onclick = () => {
+  sysFilter = c.dataset.s; document.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === c)); render();
+});
+$("#reset").onclick = () => {
+  sel = null; typeFilter = null; sysFilter = ""; openK.clear(); open.clear(); $("#q").value = "";
+  document.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", !x.dataset.s));
+  $("#expand").textContent = "모두 펼치기"; cards(); render(); showDetail();
+};
+window.addEventListener("resize", () => requestAnimationFrame(draw));
+cards(); render(); showDetail(); table(); compare();
+</script>
+</body>
+</html>

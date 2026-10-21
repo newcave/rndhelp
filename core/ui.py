@@ -82,9 +82,9 @@ html, body, [class*="css"], .stMarkdown, .stTextInput, .stSelectbox, button, inp
 .kw-step {{ display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px solid #EEF1F4; }}
 .kw-step .no {{ background:{KW_BLUE}; color:#fff; border-radius:50%; min-width:24px; height:24px; text-align:center; line-height:24px; font-size:.8rem; font-weight:700; }}
 .kw-step .tx b {{ color:#16202C; }} .kw-step .tx span {{ color:#4E5968; font-size:.86rem; }}
-/* 사이드바: 정산 Adaptor 는 비목 매핑의 하위 메뉴처럼 들여쓰기하고 글씨를 작게 */
-[data-testid="stSidebarNav"] a[href$="/adaptor"], [data-testid="stSidebarNav"] a[href*="/proposal-"] {{ margin-left:1.6rem; }}
-[data-testid="stSidebarNav"] a[href$="/adaptor"] p, [data-testid="stSidebarNav"] a[href*="/proposal-"] p {{ font-size:.76rem !important; }}
+/* 사이드바: 비목 매핑 지도·정산 Adaptor 는 비목 매핑의 하위 메뉴처럼 들여쓰기하고 글씨를 작게 */
+[data-testid="stSidebarNav"] a[href$="/adaptor"], [data-testid="stSidebarNav"] a[href$="/budget-map"], [data-testid="stSidebarNav"] a[href*="/proposal-"] {{ margin-left:1.6rem; }}
+[data-testid="stSidebarNav"] a[href$="/adaptor"] p, [data-testid="stSidebarNav"] a[href$="/budget-map"] p, [data-testid="stSidebarNav"] a[href*="/proposal-"] p {{ font-size:.76rem !important; }}
 /* 사이드바 긴 메뉴명은 말줄임 대신 줄바꿈 */
 [data-testid="stSidebarNav"] a[href$="/inkind"] [data-testid="stMarkdownContainer"], [data-testid="stSidebarNav"] a[href$="/inkind"] p {{ white-space:normal !important; overflow:visible !important; text-overflow:clip !important; line-height:1.3; }}
 .kw-grid {{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }}

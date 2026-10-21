@@ -35,6 +35,7 @@ pages = {
     ],
     "수행·정산": [
         st.Page("views/mapping.py", url_path="mapping", title="비목 매핑 (K-water↔RCMS)", icon=":material/swap_horiz:"),
+        st.Page("views/budget_map.py", url_path="budget-map", title="└ 비목 매핑 지도"),
         st.Page("views/adaptor.py", url_path="adaptor", title="└ 정산 Adaptor (베타)"),
         st.Page("views/settlement.py", url_path="settlement", title="정산 사전점검", icon=":material/fact_check:"),
         st.Page("views/inkind.py", url_path="inkind", title="현물 적정성 검토(자산, 과업종료 직후)", icon=":material/precision_manufacturing:"),
