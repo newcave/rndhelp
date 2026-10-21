@@ -39,6 +39,21 @@ ui.card_grid([
     ("국가연구개발사업", f"{len(natl)}건", f"연구비 비중 {natl['당해(억)'].sum() / amt:.0%}"),
 ])
 
+# ── 타임라인 ──
+ui.section("과제별 수행 기간 현황")
+tl = d_cur.sort_values(["연구소", "총 연구 시작"]).copy()
+tl["과제"] = tl["과제명"].str.slice(0, 26) + tl["과제명"].str.len().gt(26).map({True: "…", False: ""})
+tl["시작"], tl["종료"] = tl["총 연구 시작"], tl["총 연구 종료"]
+today = pd.DataFrame({"t": [pd.Timestamp.today().normalize()]})
+g = alt.Chart(tl).mark_bar(height=9, cornerRadius=4).encode(
+    y=alt.Y("과제:N", sort=list(tl["과제"]), title=None, axis=alt.Axis(labelLimit=260, labelFontSize=11)),
+    x=alt.X("시작:T", title=None), x2="종료:T",
+    color=alt.Color("연구소:N", legend=alt.Legend(orient="top", title=None)),
+    tooltip=["연구소", "과제명", alt.Tooltip("시작:T", format="%Y-%m-%d"), alt.Tooltip("종료:T", format="%Y-%m-%d"),
+             alt.Tooltip("당해(억):Q", format=",.2f", title="당해년도(억)")])
+rule = alt.Chart(today).mark_rule(color="#B42318", strokeDash=[4, 3]).encode(x="t:T")
+st.altair_chart((g + rule).properties(height=max(300, 17 * len(tl))), width="stretch")
+
 # ── 연도별 금액 / 연도×연구소 히트맵 ──
 c1, c2 = st.columns([1, 1.5])
 with c1:
@@ -88,21 +103,6 @@ r2 = h2.mark_rect(stroke="white").encode(color=alt.Color("금액:Q", scale=alt.S
 t2 = h2.mark_text(fontSize=11).encode(text=alt.Text("금액:Q", format=",.1f"),
                                        color=alt.condition(alt.datum["금액"] > x["금액"].max() * 0.55, alt.value("white"), alt.value("#16202C")))
 st.altair_chart((r2 + t2).properties(height=300), width="stretch")
-
-# ── 타임라인 ──
-ui.section(f"{cur}년 수행 과제 기간")
-tl = d_cur.sort_values(["연구소", "총 연구 시작"]).copy()
-tl["과제"] = tl["과제명"].str.slice(0, 26) + tl["과제명"].str.len().gt(26).map({True: "…", False: ""})
-tl["시작"], tl["종료"] = tl["총 연구 시작"], tl["총 연구 종료"]
-today = pd.DataFrame({"t": [pd.Timestamp.today().normalize()]})
-g = alt.Chart(tl).mark_bar(height=9, cornerRadius=4).encode(
-    y=alt.Y("과제:N", sort=list(tl["과제"]), title=None, axis=alt.Axis(labelLimit=260, labelFontSize=11)),
-    x=alt.X("시작:T", title=None), x2="종료:T",
-    color=alt.Color("연구소:N", legend=alt.Legend(orient="top", title=None)),
-    tooltip=["연구소", "과제명", alt.Tooltip("시작:T", format="%Y-%m-%d"), alt.Tooltip("종료:T", format="%Y-%m-%d"),
-             alt.Tooltip("당해(억):Q", format=",.2f", title="당해년도(억)")])
-rule = alt.Chart(today).mark_rule(color="#B42318", strokeDash=[4, 3]).encode(x="t:T")
-st.altair_chart((g + rule).properties(height=max(300, 17 * len(tl))), width="stretch")
 
 # ── 목록 ──
 ui.section("과제 목록")
