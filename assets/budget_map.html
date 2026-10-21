@@ -23,7 +23,7 @@
   .cards { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 10px; }
   .card { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: #fff; cursor: pointer; }
   .card .l { color: #6B7684; font-size: .74rem; } .card .v { font-size: 1.25rem; font-weight: 700; }
-  .card.on { outline: 2px solid var(--blue); }
+  .card.on { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }   /* outline은 iframe 위쪽 가장자리에서 잘려 안쪽 테두리로 표시 */
   /* 탭 */
   .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 10px; }
   .tabs button { border: 0; background: none; padding: 8px 14px; font: inherit; font-size: .92rem; color: var(--sub);
