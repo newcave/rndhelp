@@ -44,7 +44,7 @@ pages = {
         st.Page("views/inkind.py", url_path="inkind", title="현물 적정성 검토(자산, 과업종료 직후)", icon=":material/precision_manufacturing:"),
     ],
     "지원": [
-        st.Page("views/rules.py", url_path="rules", title="규정·FAQ 검색(발주기관별)", icon=":material/search:"),
+        st.Page("views/rules.py", url_path="rules", title="FAQ 검색", icon=":material/search:"),
         st.Page("views/interview.py", url_path="interview", title="연구소별 의견/피드백", icon=":material/forum:"),
     ],
 }
