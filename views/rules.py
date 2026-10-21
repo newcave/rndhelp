@@ -1,6 +1,6 @@
 import streamlit as st
 
-from core import state, ui
+from core import loader, state, ui
 
 ui.header("지원 › 규정·FAQ 검색", "규정·FAQ 검색",
           "연구개발비 사용 기준, KEITI 사례집 등 정산 관련 규정 요약에서 질문과 가까운 항목을 찾음.")
@@ -32,3 +32,16 @@ if q.strip():
 
 ui.note("요약문은 원문이 아님. 인용·소명 시에는 반드시 고시·지침 원문 조문 확인 필요. "
         "지식베이스는 <code>data/regulations.yaml</code>에서 항목 추가·수정 가능.")
+
+ui.section("참고한 보고서·기준")
+_reg = loader.regulations()
+_cnt = {}
+for _it in _reg["items"]:
+    _cnt[_it["source"]] = _cnt.get(_it["source"], 0) + 1
+_lines = []
+for _k, _s in _reg["sources"].items():
+    _name = f"[{_s['name']}]({_s['url']})" if _s.get("url") else _s["name"]
+    _lines.append(f"- {_name} — {_cnt.get(_k, 0)}항목")
+_lines.append("- 연구원 연구보고서: A Comprehensive Assessment of Reference-Free RAG Indicators for Korean Public Documents in the Water Sector — 검색 신뢰도 지표(Top1 유사도·Top1–Top2 마진)")
+st.markdown("\n".join(_lines))
+st.caption("링크는 대학 등에서 게시한 사본일 수 있어 인용·소명 시에는 발주기관 공식 원문을 확인할 것.")
