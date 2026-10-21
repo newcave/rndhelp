@@ -31,8 +31,13 @@ def get_mapper(version: int = 0) -> mapper.HybridMapper:
 
 
 @st.cache_resource
-def get_search() -> search.RegSearch:
+def _search_index(sig: str) -> search.RegSearch:
     return search.RegSearch()
+
+
+def get_search() -> search.RegSearch:
+    """규정·FAQ 파일이나 검색 코드가 바뀌면(sig) 새 인덱스를 만든다 — 배포 후 옛 인덱스가 남는 문제 방지."""
+    return _search_index(search.data_signature())
 
 
 def model_version() -> int:

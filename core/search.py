@@ -8,8 +8,10 @@ Top1 유사도와 Top1–Top2 마진으로 '근거 충분/부족'을 함께 보�
 """
 from __future__ import annotations
 
+import hashlib
 import re
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -35,6 +37,13 @@ TITLE_W = 0.4  # 제목 유사도 가중
 INTENT = [(r"증빙\s*자료|증명\s*자료|증빙|구비\s*서류|서류", "증빙자료"), (r"불인정|인정\s*안|지적", "불인정 사례")]
 INTENT_BONUS = 0.08
 KINDS = ["규정 요약"] + [k[1] for k in KNOWLEDGE]
+
+
+def data_signature() -> str:
+    """검색 코드·지식베이스 파일 내용의 해시. 바뀌면 캐시된 검색 인덱스를 새로 만든다."""
+    files = [Path(__file__), loader.DATA / "regulations.yaml", loader.DATA / "search_synonyms.yaml"]
+    files += sorted(KNOW.glob("*.md"))
+    return hashlib.md5(b"".join(f.read_bytes() for f in files if f.exists())).hexdigest()
 
 
 @dataclass
