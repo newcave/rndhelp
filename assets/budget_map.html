@@ -91,6 +91,7 @@
   .warnbox { background: #FFF8EC; border: 1px solid #F3D9A8; border-radius: 4px; padding: 7px 9px; color: #5A4100; font-size: .8rem; margin: 6px 0; }
   .notebox { background: #F4F8FD; border: 1px solid #D6E4F5; border-radius: 4px; padding: 7px 9px; color: #2B3A4D; font-size: .8rem; margin: 6px 0; }
   .link { color: var(--blue); cursor: pointer; }
+  .back { margin: -2px 0 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); font-size: .8rem; }
   /* 표 */
   table { border-collapse: collapse; width: 100%; font-size: .8rem; }
   th, td { border: 1px solid var(--line); padding: 5px 7px; text-align: left; vertical-align: top; }
@@ -122,7 +123,7 @@
       <input type="text" id="q" placeholder="검색: 과목·세목·품목 (예: 노트북, 회의비, 클라우드, 투고료)">
       <span class="chip on" data-s="">전체</span><span class="chip" data-s="경상">경상개발비</span><span class="chip" data-s="조사">조사설계비</span>
       <button id="expand">모두 펼치기</button>
-      <button id="reset">선택 해제</button>
+      <button id="reset">처음 상태로</button>
     </div>
     <div class="tool legend">
       <span><i style="border-color:var(--ok)"></i>가능</span>
@@ -180,7 +181,7 @@ let typeFilter = null;
 function cards() {
   const cnt = t => DATA.kwater.filter(k => k.type === t).length;
   // 판정 우선순위의 역순(일치 → … → 매칭 불가)으로 보여 준다
-  const items = [["K-water 과목", DATA.kwater.length, null]].concat([...DATA.types].reverse().map(t => [t.name, cnt(t.name), t.name]));
+  const items = [["K-water 과목", DATA.kwater.length, null]].concat([...DATA.types].reverse().filter(t => cnt(t.name)).map(t => [t.name, cnt(t.name), t.name]));
   $("#cards").innerHTML = items.map(([l, v, t]) =>
     `<div class="card ${typeFilter === t ? "on" : ""}" data-t="${t ?? ""}" title="${t ? esc(DATA.types.find(x => x.name === t).desc) : "전체 보기"}">
        <div class="l">${t ? `<span class="bdg t-${cls(t)}">${esc(l)}</span>` : esc(l)}</div><div class="v">${v}</div></div>`).join("");
@@ -212,7 +213,7 @@ function render() {
         <span class="nm"><span class="sys">${esc(k.system)}</span>${ob}${esc(k.sub)}</span><span class="bdg t-${cls(k.type)}">${esc(k.type)}</span></div>`;
     }
   }
-  if (!html.includes('class="kg')) html += `<div class="notebox">조건에 맞는 과목이 없습니다. 다른 표현으로 검색하거나 '선택 해제'를 눌러 주세요.</div>`;
+  if (!html.includes('class="kg')) html += `<div class="notebox">조건에 맞는 과목이 없습니다. 다른 표현으로 검색하거나 '처음 상태로'를 눌러 주세요.</div>`;
   $("#left").innerHTML = html;
   // 오른쪽: 국가R&D
   const inc = key => DATA.kwater.filter(k => k.rules.some(r => r.keys.includes(key) && r.judge !== "불가")).length;
@@ -319,11 +320,14 @@ function showDetail() {
     d.innerHTML = `<h3>사용 방법</h3>
       <p>왼쪽 <b>K-water 묶음</b>을 누르면 과목이 펼쳐지고, 과목이나 오른쪽 <b>국가R&amp;D 비목·세목</b>을 누르면 연결된 선과 세부 조건이 여기에 나옵니다.
          접힌 묶음에서도 선은 묶음 단위로 이어집니다.</p>
-      <div class="kv">매칭 유형</div>${DATA.types.map(t => `<p><span class="bdg t-${cls(t.name)}">${esc(t.name)}</span> ${esc(t.desc)}</p>`).join("")}
+      <div class="kv">매칭 유형</div>${[...DATA.types].reverse().filter(t => DATA.kwater.some(k => k.type === t.name))
+        .map(t => `<p><span class="bdg t-${cls(t.name)}">${esc(t.name)}</span> ${esc(t.desc)}</p>`).join("")}
       <div class="kv">공통 전제</div><div class="notebox">${esc(DATA.meta.premise)}</div>
+      ${DATA.meta.etc_note ? `<div class="kv">'기타' 과목</div><div class="notebox">${esc(DATA.meta.etc_note)}</div>` : ""}
       <div class="kv">기준</div><p>${esc(DATA.meta.basis)}</p><p style="color:var(--muted);font-size:.76rem">${esc(DATA.meta.kwater_source)}<br>${esc(DATA.meta.status)} · ${esc(DATA.meta.generated)}</p>`;
     return;
   }
+  const back = `<div class="back"><span class="link" id="toOverview">← 처음 설명(매칭 유형) 보기</span></div>`;
   if (sel.kind === "kw") {
     const k = DATA.kwater.find(x => x.id === sel.id);
     const t = DATA.types.find(x => x.name === k.type);
@@ -365,6 +369,9 @@ function showDetail() {
       ${sems.map(n => { const c = DATA.kwater.filter(k => k.rules.some(r => r.keys.includes(n.key) && r.judge !== "불가")).length;
         return `<p><span class="ap ap-${n.apply}">${n.apply}</span> ${natLink(n.key)} <span class="inc">${c ? "K-water " + c + "개 연결" : "K-water 대응 없음"}</span></p>`; }).join("")}`;
   }
+  d.insertAdjacentHTML("afterbegin", back);
+  $("#toOverview").onclick = clearSel;
+  d.scrollTop = 0;
   d.querySelectorAll("[data-nat]").forEach(e => e.onclick = () => select("nat", e.dataset.nat));
   d.querySelectorAll("[data-kw]").forEach(e => e.onclick = () => select("kw", e.dataset.kw));
 }
@@ -406,6 +413,8 @@ $("#reset").onclick = () => {
   document.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", !x.dataset.s));
   $("#expand").textContent = "모두 펼치기"; cards(); render(); showDetail();
 };
+function clearSel() { sel = null; render(); showDetail(); }
+document.addEventListener("keydown", e => { if (e.key === "Escape" && sel) clearSel(); });
 window.addEventListener("resize", () => requestAnimationFrame(draw));
 cards(); render(); showDetail(); table(); compare();
 </script>
