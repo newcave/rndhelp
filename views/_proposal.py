@@ -34,8 +34,8 @@ def render(section: str | None = None) -> None:
         gov = c1.number_input("정부지원 연구개발비(천원)", value=250_000, step=10_000)
         gov_max = c2.number_input("정부지원 상한 (공기업)", value=float(A["gov_ratio_max_public"]), step=0.05, format="%.2f")
         cash_min = c3.number_input("기관부담 중 현금 하한", value=float(A["cash_ratio_min_public"]), step=0.01, format="%.2f")
-        rate = c4.number_input("간접비 고시비율", value=0.20, step=0.01, format="%.2f",
-                               help="기관별 과기정통부 간접비 고시비율을 입력")
+        rate = c4.number_input("간접비 고시비율 (미해당, 참고)", value=0.20, step=0.01, format="%.2f",
+                               help="공기업 수탁과제에는 미해당이며 참고용 값임")
         tbl = st.data_editor(budget.default_table(), hide_index=True, width="stretch", disabled=["비목"],
                              column_config={"현금(천원)": st.column_config.NumberColumn(format="localized"),
                                             "현물(천원)": st.column_config.NumberColumn(format="localized")})
@@ -48,9 +48,10 @@ def render(section: str | None = None) -> None:
         fails = [c for c in C if not c.ok]
         if fails:
             ui.note(f"한도·비율 위반 {len(fails)}건 — 제출 전 조정 필요.", "warn")
-        st.dataframe(pd.DataFrame([{"결과": "✓ 적합" if c.ok else "✕ 위반", "항목": c.item, "편성": c.value, "기준": c.limit,
-                                    "근거": f"{c.ref} {rs.get(c.ref)['title'] if rs.get(c.ref) else ''}", "메모": c.note} for c in C]),
-                     hide_index=True, width="stretch")
+        df = pd.DataFrame([{"결과": "✓ 적합" if c.ok else "✕ 위반", "항목": c.item, "편성": c.value, "기준": c.limit,
+                            "근거": f"{c.ref} {rs.get(c.ref)['title'] if rs.get(c.ref) else ''}", "메모": c.note} for c in C])
+        bad = lambda r: ["color:#B42318;background-color:#FEE4E2;font-weight:700" if r["결과"].startswith("✕") else "" for _ in r]
+        st.dataframe(df.style.apply(bad, axis=1), hide_index=True, width="stretch")
 
     def _check():
         ui.section(f"{akey} 제출 전 확인")
