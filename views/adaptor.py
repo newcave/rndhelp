@@ -31,7 +31,7 @@ st.markdown(
     '<div class="kw-flow">'
     '<div class="col">'
     '<div class="box src">K-water FMS<small>재무통합 · 집행내역</small></div>'
-    '<div class="box src">OASIS<small>인트라넷 · 관련 방침·지침</small></div>'
+    '<div class="box src">OASIS<small>관련 방침·지침 / 재무통합 · 집행내역(회계결의서, 영수증 등)</small></div>'
     '<div class="box src opt">STP<small>기술통합관리 · 과제정보 (필요시)</small></div></div>'
     '<div class="arr">→</div>'
     '<div class="box store">저장소(예산집행 전용, 비공개)<small>Adaptor 보관소 — 자료 보관·버전 관리</small></div>'
@@ -113,7 +113,7 @@ with t1:
     st.markdown("연계 대상 자료를 **저장소(예산집행 전용, 비공개)** 에 모아 두고, 과제별로 같은 기준 자료를 사용함.")
     st.dataframe(pd.DataFrame([
         {"자료": "집행내역", "출처": "K-water FMS (재무통합)", "용도": "RCMS 비목 변환 대상", "필요": "필수", "수신 현황": f"{len(mapped)}건"},
-        {"자료": "관련 방침·지침", "출처": "OASIS (인트라넷)", "용도": "내부 정산 방침·절차 기준", "필요": "필수", "수신 현황": "규정 아카이브와 함께 관리"},
+        {"자료": "관련 방침·지침", "출처": "OASIS", "용도": "내부 정산 방침·절차 기준", "필요": "필수", "수신 현황": "규정 아카이브와 함께 관리"},
         {"자료": "과제·기술 정보", "출처": "STP (기술통합관리)", "용도": "협약기간·과제 구성 등 확인", "필요": "필요시", "수신 현황": f"{pname} · {start:%Y.%m.%d}~{end:%Y.%m.%d}"},
     ]), hide_index=True, width="stretch")
     st.caption("보관소는 각 시스템 원본을 대체하지 않고, 정산 작업용 사본과 변환 이력만 관리하는 별도 공간으로 구상함.")
