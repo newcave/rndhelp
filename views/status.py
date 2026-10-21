@@ -50,7 +50,7 @@ with c1:
     txt = base.mark_text(dy=-8, fontWeight="bold", color=NAVY).encode(y="금액:Q", text=alt.Text("금액:Q", format=",.1f"))
     st.altair_chart((bars + txt).properties(height=280), width="stretch")
 with c2:
-    ui.section("연구소 × 연도 히트맵 (당해년도 연구비, 억원)")
+    ui.section("연구소별 현황(억원)")
     hm = df.groupby(["연구소", "연도"], as_index=False)["당해(억)"].sum()
     order = list(df.groupby("연구소")["당해(억)"].sum().sort_values(ascending=False).index)
     h = alt.Chart(hm).encode(y=alt.Y("연구소:N", sort=order, title=None, axis=alt.Axis(labelLimit=170)), x=alt.X("연도:O", title=None, axis=alt.Axis(labelAngle=0)))
