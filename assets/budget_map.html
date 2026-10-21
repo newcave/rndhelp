@@ -71,7 +71,9 @@
         border-left: 4px solid var(--blue); border-radius: 6px; padding: 5px 8px; margin: 4px 0 2px; cursor: pointer; font-weight: 700; }
   .bm .cnt { color: var(--muted); font-weight: 400; font-size: .74rem; }
   .bm .arr { color: var(--muted); font-size: .8rem; margin-right: 2px; }
-  .bm.indirect { border-left-color: var(--teal); }
+  .bm.indirect, .kg.indirect { border-left-color: var(--teal); }
+  .gk-d { color: var(--muted); font-size: .72rem; font-weight: 400; margin: 0 0 4px 2px; line-height: 1.35; }
+  .side2 { color: #9A5B00; font-size: .7rem; margin-left: 4px; white-space: nowrap; }
   .sm { display: flex; align-items: center; justify-content: space-between; gap: 6px; background: #fff; border: 1px solid var(--line);
         border-radius: 6px; padding: 4px 8px; margin: 0 0 3px 14px; cursor: pointer; font-size: .82rem; }
   .sm:hover, .bm:hover { border-color: var(--blue); }
@@ -174,6 +176,12 @@ const ALIAS = {"노트북": ["사무용 기기", "연구기자재"], "컴퓨터"
 const open = new Set();         // 펼친 국가R&D 비목
 const openK = new Set();        // 펼친 K-water 묶음
 let sysFilter = "";             // "" | "경상" | "조사" (공통 과목은 항상 포함)
+// K-water 구분(직접비/간접비/기타): 작성양식 총괄표 기준. 공통 과목은 체계마다 다를 수 있어(여비: 경상 간접비, 조사 직접조사비)
+// 조사설계비만 볼 때는 조사 기준, 그 밖에는 경상 기준으로 놓는다.
+const sideOf = k => (sysFilter === "조사" ? k.side.조사 : (k.side.경상 || k.side.조사));
+const gkeyOf = k => sideOf(k) + "|" + k.group;   // 묶음 키 = 구분|묶음
+const SIDE_NOTE = k => (k.side.경상 && k.side.조사 && k.side.경상 !== k.side.조사)
+  ? (sysFilter === "조사" ? `경상개발비는 ${k.side.경상}` : `조사설계비는 ${k.side.조사 === "직접비" ? "직접조사비" : k.side.조사}`) : "";
 let sel = null;                 // {kind:'kw'|'nat'|'bm', id}
 let typeFilter = null;
 
@@ -197,20 +205,27 @@ function render() {
   const kvis = k => (!typeFilter || k.type === typeFilter) && (!sysFilter || k.system === sysFilter || k.system === "공통") &&
                     (hit(k.bimok + k.sub + k.definition + k.group) || k.rules.some(r => hit(r.cond) || r.keys.some(hit)));
   let html = '<div class="colhead">K-water 예산과목 (경상개발비·조사설계비)</div>';
-  for (const g of DATA.groups) {
-    const items = DATA.kwater.filter(k => k.group === g && kvis(k));
-    if (!items.length) continue;
-    if (q) openK.add(g);                       // 검색 중에는 맞는 묶음을 자동으로 펼침
-    const isOpen = openK.has(g);
-    const mix = Object.entries(items.reduce((m, k) => (m[k.type] = (m[k.type] || 0) + 1, m), {}))
-      .map(([t, n]) => `<span class="bdg t-${cls(t)}" title="${esc(t)} ${n}개">${n}</span>`).join("");
-    html += `<div class="kg ${sel?.kind === "kg" && sel.id === g ? "sel" : ""}" id="${esc("G_" + g)}" data-g="${esc(g)}">
-      <span><span class="arr">${isOpen ? "▾" : "▸"}</span>${esc(g)} <span class="cnt" style="color:var(--muted);font-weight:400;font-size:.74rem">${items.length}</span></span>
-      <span class="mix">${mix}</span></div>`;
-    for (const k of items) {
-      const ob = k.bimok !== g ? `<span class="ob">${esc(k.bimok)} ›</span>` : "";
-      html += `<div class="kw kgi ${isOpen ? "" : "hide"} ${sel?.kind === "kw" && sel.id === k.id ? "sel" : ""}" id="${k.id}" data-g="${esc(g)}">
-        <span class="nm"><span class="sys">${esc(k.system)}</span>${ob}${esc(k.sub)}</span><span class="bdg t-${cls(k.type)}">${esc(k.type)}</span></div>`;
+  for (const sd of DATA.sides) {
+    const inSide = DATA.kwater.filter(k => sideOf(k) === sd.name && kvis(k));
+    if (!inSide.length) continue;
+    html += `<div class="gk">${esc(sd.name)}</div><div class="gk-d">${esc(sd.desc)}</div>`;
+    for (const g of DATA.groups) {
+      const items = inSide.filter(k => k.group === g);
+      if (!items.length) continue;
+      const gk = sd.name + "|" + g;
+      if (q) openK.add(gk);                     // 검색 중에는 맞는 묶음을 자동으로 펼침
+      const isOpen = openK.has(gk);
+      const mix = Object.entries(items.reduce((m, k) => (m[k.type] = (m[k.type] || 0) + 1, m), {}))
+        .map(([t, n]) => `<span class="bdg t-${cls(t)}" title="${esc(t)} ${n}개">${n}</span>`).join("");
+      html += `<div class="kg ${sd.name === "직접비" ? "" : "indirect"} ${sel?.kind === "kg" && sel.id === gk ? "sel" : ""}" id="${esc("G_" + gk)}" data-g="${esc(gk)}">
+        <span><span class="arr">${isOpen ? "▾" : "▸"}</span>${esc(g)} <span class="cnt" style="color:var(--muted);font-weight:400;font-size:.74rem">${items.length}</span></span>
+        <span class="mix">${mix}</span></div>`;
+      for (const k of items) {
+        const ob = k.bimok !== g ? `<span class="ob">${esc(k.bimok)} ›</span>` : "";
+        const note = SIDE_NOTE(k) ? `<span class="side2" title="같은 과목이라도 체계에 따라 구분이 다름">(${esc(SIDE_NOTE(k))})</span>` : "";
+        html += `<div class="kw kgi ${isOpen ? "" : "hide"} ${sel?.kind === "kw" && sel.id === k.id ? "sel" : ""}" id="${k.id}" data-g="${esc(gk)}">
+          <span class="nm"><span class="sys">${esc(k.system)}</span>${ob}${esc(k.sub)}${note}</span><span class="bdg t-${cls(k.type)}">${esc(k.type)}</span></div>`;
+      }
     }
   }
   if (!html.includes('class="kg')) html += `<div class="notebox">조건에 맞는 과목이 없습니다. 다른 표현으로 검색하거나 '처음 상태로'를 눌러 주세요.</div>`;
@@ -252,7 +267,7 @@ function select(kind, id) {
   sel = {kind, id};
   if (kind === "kw") {   // 연결된 세목의 비목을 펼침
     const k = DATA.kwater.find(x => x.id === id);
-    openK.add(k.group);
+    openK.add(gkeyOf(k));
     k.rules.forEach(r => r.keys.forEach(key => open.add(NAT[key].bimok)));
   } else if (kind === "nat") open.add(NAT[id].bimok);
   render(); showDetail();
@@ -275,7 +290,7 @@ function draw() {
   for (const k of DATA.kwater) {
     let ke = document.getElementById(k.id);
     if (!ke) continue;                                   // 필터로 빠진 과목
-    if (ke.classList.contains("hide")) ke = document.getElementById("G_" + k.group);   // 접힌 묶음
+    if (ke.classList.contains("hide")) ke = document.getElementById("G_" + gkeyOf(k));   // 접힌 묶음
     if (!ke) continue;
     for (const r of k.rules) for (const key of r.keys) {
       const te = anchor(key); if (!te) continue;
@@ -286,7 +301,7 @@ function draw() {
       if (sel?.kind === "kw") related = sel.id === k.id;
       if (sel?.kind === "nat") related = key === sel.id;
       if (sel?.kind === "bm") related = NAT[key].bimok === sel.id;
-      if (sel?.kind === "kg") related = k.group === sel.id;
+      if (sel?.kind === "kg") related = gkeyOf(k) === sel.id;
       const color = {"가능": "var(--ok)", "조건부 가능": "var(--cond)", "불가": "var(--no)"}[r.judge] || "var(--chk)";
       const mx = (x1 + x2) / 2;
       lines.push(`<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="${color}"
@@ -303,7 +318,7 @@ function draw() {
     e.classList.toggle("dim", !rel);
   });
   document.querySelectorAll(".kg").forEach(e => {   // 묶음 머리줄도 관련 여부로 흐리게
-    const ks = DATA.kwater.filter(k => k.group === e.dataset.g);
+    const ks = DATA.kwater.filter(k => gkeyOf(k) === e.dataset.g);
     let rel = true;
     if (sel?.kind === "nat") rel = ks.some(k => k.rules.some(r => r.keys.includes(sel.id)));
     if (sel?.kind === "bm") rel = ks.some(k => k.rules.some(r => r.keys.some(x => NAT[x].bimok === sel.id)));
@@ -322,6 +337,9 @@ function showDetail() {
          접힌 묶음에서도 선은 묶음 단위로 이어집니다.</p>
       <div class="kv">매칭 유형</div>${[...DATA.types].reverse().filter(t => DATA.kwater.some(k => k.type === t.name))
         .map(t => `<p><span class="bdg t-${cls(t.name)}">${esc(t.name)}</span> ${esc(t.desc)}</p>`).join("")}
+      <div class="kv">직접비·간접비 구분</div><div class="notebox">왼쪽 K-water 과목은 작성양식 총괄표의 구분을 따름. 경상개발비는 여비·기술정보활동비를 <b>연구 간접비</b>로 두지만,
+        국가R&amp;D에서는 출장비·학회비·문헌구입비 등이 <b>직접비(연구활동비)</b>임 — 선이 왼쪽 간접비에서 오른쪽 직접비로 이어지는 이유.
+        국가R&amp;D 간접비(인력지원비·연구지원비·성과활용지원비)는 기관이 고시비율로 받는 몫이라 K-water 과목과 1:1로 잇지 않음.</div>
       <div class="kv">공통 전제</div><div class="notebox">${esc(DATA.meta.premise)}</div>
       ${DATA.meta.etc_note ? `<div class="kv">'기타' 과목</div><div class="notebox">${esc(DATA.meta.etc_note)}</div>` : ""}
       <div class="kv">기준</div><p>${esc(DATA.meta.basis)}</p><p style="color:var(--muted);font-size:.76rem">${esc(DATA.meta.kwater_source)}<br>${esc(DATA.meta.status)} · ${esc(DATA.meta.generated)}</p>`;
@@ -331,7 +349,8 @@ function showDetail() {
   if (sel.kind === "kw") {
     const k = DATA.kwater.find(x => x.id === sel.id);
     const t = DATA.types.find(x => x.name === k.type);
-    d.innerHTML = `<div style="color:var(--muted);font-size:.78rem">K-water ${esc(k.system === "공통" ? "경상개발비·조사설계비" : k.system === "경상" ? "경상개발비" : "조사설계비")} › ${esc(k.bimok)}</div>
+    const sideTxt = Object.entries(k.side).map(([s, v]) => `${s === "경상" ? "경상개발비" : "조사설계비"} ${s === "경상" ? (v === "직접비" ? "연구 직접비" : "연구 간접비") : (v === "직접비" ? "직접조사비" : "기타(합계 외)")}`).join(" · ");
+    d.innerHTML = `<div style="color:var(--muted);font-size:.78rem">K-water ${esc(sideTxt)} › ${esc(k.bimok)}</div>
       <h3>${esc(k.sub)}</h3><p><span class="bdg t-${cls(k.type)}">${esc(k.type)}</span> <span style="color:var(--sub);font-size:.8rem">${esc(t.desc)}</span></p>
       ${k.definition ? `<div class="kv">K-water 기준(가이드라인)</div><p>${esc(k.definition)}</p>` : ""}
       <div class="kv">국가R&amp;D 매칭 (조건·용도별)</div>
@@ -356,8 +375,10 @@ function showDetail() {
         <div class="r">${esc(r.cond)}${r.req ? " — " + esc(r.req) : ""}</div></div>`).join("")
         : `<div class="notebox">K-water 사내 과목에 대응이 없습니다. 수탁과제 예산은 이 세목으로 편성하고, 사내 회계 계정은 연구관리처가 정합니다.</div>`}`;
   } else if (sel.kind === "kg") {
-    const ks = DATA.kwater.filter(k => k.group === sel.id);
-    d.innerHTML = `<div style="color:var(--muted);font-size:.78rem">K-water 예산과목 묶음</div><h3>${esc(sel.id)}</h3>
+    const ks = DATA.kwater.filter(k => gkeyOf(k) === sel.id);
+    const [sd, g] = sel.id.split("|");
+    d.innerHTML = `<div style="color:var(--muted);font-size:.78rem">K-water 예산과목 › ${esc(sd)}</div><h3>${esc(g)}</h3>
+      <p style="color:var(--sub);font-size:.8rem">${esc(DATA.sides.find(x => x.name === sd)?.desc || "")}</p>
       <div class="kv">과목 ${ks.length}개 — 누르면 세부 조건이 나옵니다</div>
       ${ks.map(k => `<div class="rule"><div class="c"><span class="bdg t-${cls(k.type)}">${esc(k.type)}</span>
           <span class="link" data-kw="${k.id}"><span class="sys">${esc(k.system)}</span>${esc(k.bimok)} › ${esc(k.sub)}</span></div>
@@ -400,9 +421,10 @@ document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
 $("#q").oninput = render;
 $("#tq").oninput = table;
 $("#expand").onclick = () => {
-  const all = open.size === BIMOKS.length && openK.size === DATA.groups.length;
+  const allG = [...new Set(DATA.kwater.map(gkeyOf))];
+  const all = open.size === BIMOKS.length && allG.every(g => openK.has(g));
   BIMOKS.forEach(b => all ? open.delete(b.bimok) : open.add(b.bimok));
-  DATA.groups.forEach(g => all ? openK.delete(g) : openK.add(g));
+  allG.forEach(g => all ? openK.delete(g) : openK.add(g));
   $("#expand").textContent = all ? "모두 펼치기" : "모두 접기"; render();
 };
 document.querySelectorAll(".chip").forEach(c => c.onclick = () => {

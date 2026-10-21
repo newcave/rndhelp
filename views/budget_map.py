@@ -37,11 +37,17 @@ def color_cells(df, cols, table):
     return df.style.map(f, subset=[c for c in cols if c in df.columns])
 
 
+def side_text(side: dict) -> str:
+    """K-water 작성양식 총괄표 구분. 공통 과목이 체계마다 다르면 둘 다 표시 (예: 여비 — 경상 간접비 / 조사 직접비)."""
+    vals = set(side.values())
+    return vals.pop() if len(vals) == 1 else " / ".join(f"{s} {v}" for s, v in side.items())
+
+
 def rule_rows():
     rows = []
     for k in DATA["kwater"]:
         for r in k["rules"]:
-            rows.append({"체계": k["system"], "묶음": k["group"], "K-water 과목": k["bimok"], "세부": k["sub"], "매칭 유형": k["type"],
+            rows.append({"체계": k["system"], "구분": side_text(k.get("side", {})), "묶음": k["group"], "K-water 과목": k["bimok"], "세부": k["sub"], "매칭 유형": k["type"],
                          "조건·용도": r["cond"], "국가R&D 세목": " + ".join(r["keys"]) or "-", "판정": r["judge"],
                          "충족 조건 / 불가 사유": r["req"], "근거": r["basis"],
                          "RCMS 항목/세부항목": " / ".join(dict.fromkeys(f"{NAT[x]['rcms_item']} / {NAT[x]['rcms_sub']}" for x in r["keys"]))
