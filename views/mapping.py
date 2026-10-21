@@ -14,7 +14,7 @@ hm = state.get_mapper(state.model_version())
 acc = loader.accounts()
 acc_label = {r.code: f"{r.code} {r.name}" for r in acc.itertuples()}
 semok_idx = loader.semok_index()
-all_labels = [f"{v['bimok']} | {k}" for k, v in semok_idx.items()] + ["불인정 | 불인정(유흥·접대성)", "불인정 | 불인정(연구인력 지원비 제외 항목)", "불인정 | 불인정(시설·건설 목적)"]
+all_labels = [f"{v['bimok']} | {k}" for k, v in semok_idx.items()] + ["불인정 | 불인정(연구인력 지원비 제외 항목)", "불인정 | 불인정(시설·건설 목적)"]
 
 tab1, tab2, tab3 = st.tabs(["단건 조회", "일괄 변환", "매핑 기준·모델"])
 

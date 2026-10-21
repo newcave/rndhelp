@@ -23,14 +23,6 @@ rules:
     bimok: 연구활동비
     semok: 회의비
     priority: 60
-  - id: R-ENTERTAIN
-    name: 접대성 경비
-    accounts: []
-    patterns: ["주류", "맥주", "소주", "와인", "노래", "유흥", "골프", "선물"]
-    bimok: 불인정
-    semok: 불인정(유흥·접대성)
-    priority: 100
-    warn: "주류 등 유흥성 경비는 국가과제 계상 불가 (제21조④)"
   - id: R-SURVEY-CONSTRUCT
     name: 시설·건설 목적 설계·감리 (조사설계비)
     accounts: ["5325", "5320"]
