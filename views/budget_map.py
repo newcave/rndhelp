@@ -55,7 +55,7 @@ def rule_rows():
     return pd.DataFrame(rows)
 
 
-tab1, tab2, tab3 = st.tabs(["매핑 지도", "표로 보기", "K-water 특수 규정 비교"])
+tab1, tab2, tab3 = st.tabs(["매핑 지도", "표로 보기", "K-water 자체 내부 규정 비교"])
 
 # ───────────────────────── 지도 ─────────────────────────
 with tab1:
@@ -90,7 +90,7 @@ with tab2:
     with pd.ExcelWriter(buf, engine="openpyxl") as xw:
         df.to_excel(xw, sheet_name="세부 매칭 규칙", index=False)
         pd.DataFrame(DATA["national"]).to_excel(xw, sheet_name="국가R&D 세목", index=False)
-        pd.DataFrame(DATA["compare"]).to_excel(xw, sheet_name="K-water 특수 규정 비교", index=False)
+        pd.DataFrame(DATA["compare"]).to_excel(xw, sheet_name="K-water 자체 내부 규정 비교", index=False)
     st.download_button("엑셀 내려받기", buf.getvalue(), file_name="K-water_국가R&D_비목_매핑.xlsx",
                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
