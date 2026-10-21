@@ -72,7 +72,6 @@
   .bm .cnt { color: var(--muted); font-weight: 400; font-size: .74rem; }
   .bm .arr { color: var(--muted); font-size: .8rem; margin-right: 2px; }
   .bm.indirect, .kg.indirect { border-left-color: var(--teal); }
-  .gk-d { color: var(--muted); font-size: .72rem; font-weight: 400; margin: 0 0 4px 2px; line-height: 1.35; }
   .side2 { color: #9A5B00; font-size: .7rem; margin-left: 4px; white-space: nowrap; }
   .sm { display: flex; align-items: center; justify-content: space-between; gap: 6px; background: #fff; border: 1px solid var(--line);
         border-radius: 6px; padding: 4px 8px; margin: 0 0 3px 14px; cursor: pointer; font-size: .82rem; }
@@ -208,7 +207,7 @@ function render() {
   for (const sd of DATA.sides) {
     const inSide = DATA.kwater.filter(k => sideOf(k) === sd.name && kvis(k));
     if (!inSide.length) continue;
-    html += `<div class="gk">${esc(sd.name)}</div><div class="gk-d">${esc(sd.desc)}</div>`;
+    html += `<div class="gk">${esc(sd.name)}</div>`;
     for (const g of DATA.groups) {
       const items = inSide.filter(k => k.group === g);
       if (!items.length) continue;
