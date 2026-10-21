@@ -41,6 +41,7 @@ pages = {
     ],
     "지원": [
         st.Page("views/rules.py", url_path="rules", title="규정·FAQ 검색(발주기관별)", icon=":material/search:"),
+        st.Page("views/status.py", url_path="status", title="수탁과제 수행 현황", icon=":material/monitoring:"),
         st.Page("views/interview.py", url_path="interview", title="연구소별 의견/피드백", icon=":material/forum:"),
     ],
 }
