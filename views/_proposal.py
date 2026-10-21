@@ -48,9 +48,9 @@ def render(section: str | None = None) -> None:
         fails = [c for c in C if not c.ok]
         if fails:
             ui.note(f"한도·비율 위반 {len(fails)}건 — 제출 전 조정 필요.", "warn")
-        df = pd.DataFrame([{"결과": "✓ 적합" if c.ok else "✕ 위반", "항목": c.item, "편성": c.value, "기준": c.limit,
+        df = pd.DataFrame([{"결과": "✓ 적합" if c.ok else "NG", "항목": c.item, "편성": c.value, "기준": c.limit,
                             "근거": f"{c.ref} {rs.get(c.ref)['title'] if rs.get(c.ref) else ''}", "메모": c.note} for c in C])
-        bad = lambda r: ["color:#B42318;background-color:#FEE4E2;font-weight:700" if r["결과"].startswith("✕") else "" for _ in r]
+        bad = lambda r: ["color:#B42318;background-color:#FEE4E2;font-weight:700" if r["결과"].== "NG" else "" for _ in r]
         st.dataframe(df.style.apply(bad, axis=1), hide_index=True, width="stretch")
 
     def _check():
