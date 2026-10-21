@@ -9,7 +9,7 @@ from core import loader, ui
 BLUE, TEAL, NAVY = "#005BAC", "#00A0B0", "#0B3B6E"
 EOK = 1e8  # 억원
 
-ui.header("지원 › 수탁과제 수행 현황", "수탁과제 수행 현황")
+ui.header("", "수탁과제 수행 현황")
 
 
 @st.cache_data

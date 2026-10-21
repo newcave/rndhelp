@@ -26,7 +26,10 @@ core._SIG = _SIG
 ui.setup_page()
 
 pages = {
-    "": [st.Page("views/home.py", title="홈", icon=":material/home:", default=True)],
+    "": [
+        st.Page("views/home.py", title="홈", icon=":material/home:", default=True),
+        st.Page("views/status.py", url_path="status", title="수탁과제 수행 현황", icon=":material/monitoring:"),
+    ],
     "과제 준비": [
         st.Page("views/proposal.py", url_path="proposal", title="제안서 작성 지원 Tool", icon=":material/edit_document:"),
         st.Page("views/proposal_budget.py", url_path="proposal-budget", title="└ 연구비 편성 검증"),
@@ -42,7 +45,6 @@ pages = {
     ],
     "지원": [
         st.Page("views/rules.py", url_path="rules", title="규정·FAQ 검색(발주기관별)", icon=":material/search:"),
-        st.Page("views/status.py", url_path="status", title="수탁과제 수행 현황", icon=":material/monitoring:"),
         st.Page("views/interview.py", url_path="interview", title="연구소별 의견/피드백", icon=":material/forum:"),
     ],
 }
