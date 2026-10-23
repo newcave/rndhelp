@@ -8,7 +8,7 @@ from pathlib import Path
 
 import streamlit as st
 
-st.set_page_config(page_title="수탁과제 관리 Support 시스템 | K-water 연구원", page_icon="assets/icon.png", layout="wide")
+st.set_page_config(page_title="수탁과제 관리 Support System | K-water 연구원", page_icon="assets/icon.png", layout="wide")
 
 # 클라우드에서 새 코드가 반영될 때 core 모듈이 옛 버전으로 남아 있으면(AttributeError 등)
 # core/*.py 내용이 바뀐 것을 감지해 강제로 다시 불러온다.
